@@ -29,7 +29,11 @@ const cubariURL = "https://cubari.moe/read/mangadex/%s/%s/1"
 func get(ctx context.Context, c *http.Client, method, url string, v, data interface{}) error {
 
 	// block until someone is done
+	// and release when we return
 	sem <- struct{}{}
+	defer func() {
+		<-sem
+	}()
 
 	var err error
 	var req *http.Request
@@ -56,9 +60,6 @@ func get(ctx context.Context, c *http.Client, method, url string, v, data interf
 	if err != nil {
 		return err
 	}
-
-	// we're done
-	<-sem
 
 	return json.Unmarshal(feeds, &v)
 }
