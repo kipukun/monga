@@ -37,7 +37,7 @@ func (s *state) getFeed(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	rfeed, err := jsonToRss(r.Context(), s.c, &feedresp)
+	rfeed, err := jsonToRss(r.Context(), s.c, id, &feedresp)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

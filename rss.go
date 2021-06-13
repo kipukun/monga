@@ -64,28 +64,21 @@ func get(ctx context.Context, c *http.Client, method, url string, v, data interf
 	return json.Unmarshal(feeds, &v)
 }
 
-func jsonToRss(ctx context.Context, c *http.Client, fr *FeedResponse) (*feeds.Feed, error) {
+func jsonToRss(ctx context.Context, c *http.Client, id string, fr *FeedResponse) (*feeds.Feed, error) {
 	var items []*feeds.Item
 	var title interface{}
-	var id string
+	var ok bool
+	title, ok = cache.Load(id)
+	if !ok {
+		var mresp MangaResponse
+		err := get(ctx, c, "GET", "https://api.mangadex.org/manga/"+id, &mresp, nil)
+		if err != nil {
+			return nil, err
+		}
+		cache.Store(id, mresp.Data.Attributes.Title.En)
+		title = mresp.Data.Attributes.Title.En
+	}
 	for _, res := range fr.Results {
-		for _, r := range res.Relationships {
-			if r.Type != "manga" {
-				continue
-			}
-			id = r.ID
-		}
-		var ok bool
-		title, ok = cache.Load(id)
-		if !ok {
-			var mresp MangaResponse
-			err := get(ctx, c, "GET", "https://api.mangadex.org/manga/"+id, &mresp, nil)
-			if err != nil {
-				return nil, err
-			}
-			cache.Store(id, mresp.Data.Attributes.Title.En)
-			title = mresp.Data.Attributes.Title.En
-		}
 		time, err := time.Parse(time.RFC3339, strings.Replace(res.Data.Attributes.Createdat, "Z00:00", "Z", 1))
 		if err != nil {
 			return nil, err
